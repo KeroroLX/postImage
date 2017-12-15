@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <script src="./js/jquery.min.js"></script>
+    <style>
+        #lxpostImage{
+            position: relative;
+            width:300px;
+            height: 300px;
+            background-color: #cccccc;
+            -webkit-border-radius:5px;
+            -moz-border-radius:5px;
+            border-radius:5px;
+            overflow: hidden;
+        }
+        #lxpostImage .inputFileBtn{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            filter:alpha(opacity=0);
+            -moz-opacity:0;
+            -khtml-opacity: 0;
+            opacity: 0;
+            top:0;
+            left:0;
+            z-index: 3;
+        }
+        #lxpostImage img{
+            position: absolute;
+            left:0;
+            top:0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+        .tips{
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            font-size: 12px;
+            color: #fff;
+            height: 100%;
+            line-height: 300px;
+            z-index: 4;
+        }
+        .displayNone{
+            display: none;
+        }
+        #lxpostImage .imgBox{
+            position: absolute;
+            top:0;
+            left:0;
+            z-index: 2;
+            width: 100%;
+            height: 100%;
+        }
+        #lxpostImage .imgBox img{
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body>
+<div id='lxpostImage'>
+    <input type="file" class='inputFileBtn'>
+    <img id='transform' src="" alt="">
+    <span class='tips displayNone'>读取中...</span>
+    <div class="imgBox"></div><!--作用主要是手机端拍照后方向被旋转显示有问题-->
+</div>
+
+</body>
+<script>
+    $(function(){
+        $("#lxpostImage .inputFileBtn").on("change",function(){
+            $('.tips').removeClass('displayNone');
+            if(!this.files[0]){
+                $('.tips').addClass('displayNone');
+                return;
+            }
+            var file = this.files[0];
+            var reader = new FileReader();
+            reader.readAsDataURL(file);
+
+            setTimeout(function(){
+                var result=reader.result;//获取图片的路径
+                var hh="<img src='"+result+"'/>"
+                $('#lxpostImage .imgBox').html(hh);
+                dealImage(result,{width:200},function(base){
+                    $('.tips').addClass('displayNone');
+                    document.getElementById("transform").src = base;
+                    console.log("压缩后：" + base.length / 1024 + " " + base);
+                });
+            },1000)
+        })
+    })
+
+
+    function dealImage(path, obj, callback){
+        var img = new Image();
+        img.src = path;
+        img.onload = function(){
+            var that = this;
+            // 默认按比例压缩
+            var w = that.width,
+                    h = that.height,
+                    scale = w / h;
+            w = obj.width || w;
+            h = obj.height || (w / scale);
+            var quality = 0.7;
+
+            //生成canvas绘图
+            var canvas = document.createElement('canvas');
+            var ctx = canvas.getContext('2d');
+
+            var anw = document.createAttribute("width");
+            anw.nodeValue = w;
+            var anh = document.createAttribute("height");
+            anh.nodeValue = h;
+            canvas.setAttributeNode(anw);
+            canvas.setAttributeNode(anh);
+            ctx.drawImage(that, 0, 0, w, h);
+            // 图像质量
+            if(obj.quality && obj.quality <= 1 && obj.quality > 0){
+                quality = obj.quality;
+            }
+            // quality值越小，所绘制出的图像越模糊
+            var base64 = canvas.toDataURL('image/jpeg', quality );
+            // 返回base64
+            callback(base64);
+        }
+    }
+</script>
+</html>
